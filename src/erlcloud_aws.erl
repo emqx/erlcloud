@@ -353,7 +353,7 @@ raw_xml_response(Body) ->
     end.
 
 format_xml_response(Body) ->
-    try 
+    try
         {ok, element(1, xmerl_scan:string(binary_to_list(Body)))}
     catch
         _:_ ->
@@ -1235,7 +1235,7 @@ canonical_headers(Headers) ->
 -spec canonical_query_string(Params) -> String
 when Params :: [{Name, Value}],
      Name :: atom() | string() | binary(),
-     Value :: atom() | string() | binary() | integer(),
+     Value :: atom() | iodata() | integer(),
      String :: string().
 canonical_query_string([]) ->
     "";
