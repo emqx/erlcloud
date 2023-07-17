@@ -3,7 +3,7 @@
 -module(erlcloud_kinesis).
 
 %%% Library initialization.
--export([configure/2, configure/3, configure/4,  new/2, new/3]).
+-export([configure/2, configure/3, configure/4, configure/5,  new/2, new/3, new/4, new/5]).
 
 -export([create_stream/2, create_stream/3,
          delete_stream/1, delete_stream/2,
@@ -64,6 +64,18 @@ new(AccessKeyID, SecretAccessKey, Host, Port) ->
        kinesis_port=Port
       }.
 
+-spec new(string(), string(), string(), non_neg_integer(), string()) ->
+    aws_config().
+
+new(AccessKeyID, SecretAccessKey, Host, Port, Scheme) ->
+    #aws_config{
+       access_key_id=AccessKeyID,
+       secret_access_key=SecretAccessKey,
+       kinesis_host=Host,
+       kinesis_port=Port,
+       kinesis_scheme=Scheme
+      }.
+
 -spec configure(string(), string()) -> ok.
 configure(AccessKeyID, SecretAccessKey) ->
     erlcloud_config:configure(AccessKeyID, SecretAccessKey, fun new/2).
@@ -75,6 +87,10 @@ configure(AccessKeyID, SecretAccessKey, Host) ->
 -spec configure(string(), string(), string(), non_neg_integer()) -> ok.
 configure(AccessKeyID, SecretAccessKey, Host, Port) ->
     erlcloud_config:configure(AccessKeyID, SecretAccessKey, Host, Port, fun new/4).
+
+-spec configure(string(), string(), string(), non_neg_integer(), string()) -> ok.
+configure(AccessKeyID, SecretAccessKey, Host, Port, Scheme) ->
+    erlcloud_config:configure(AccessKeyID, SecretAccessKey, Host, Port, Scheme, fun new/5).
 
 default_config() -> erlcloud_aws:default_config().
 
