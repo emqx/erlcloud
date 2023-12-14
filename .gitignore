@@ -23,3 +23,4 @@ ercloud.iml
 *[#]*
 .dialyzer_plt
 eunit.log
+rebar.lock
