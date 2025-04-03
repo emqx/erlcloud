@@ -2137,6 +2137,9 @@ aws_region_from_host(Host) ->
         %% s3.cn-north-1.amazonaws.com.cn
         ["s3", Value, _, _, _] ->
             Value;
+        %% xxx-xx--table-s3.s3-sa-east-1.amazonaws.com
+        [_, "s3-" ++ Value, _, _] ->
+            Value;
         %% s3.eu-central-1.amazonaws.com
         ["s3", Value, _, _] ->
             Value;
