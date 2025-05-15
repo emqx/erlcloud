@@ -7,7 +7,7 @@
         get_instance_user_data/0, get_instance_user_data/1,
         get_instance_dynamic_data/0, get_instance_dynamic_data/1, get_instance_dynamic_data/2]).
 
-
+-export([get_instance_metadata_v2/3, get_metadata_v2_session_token/1]).
 
 
 -spec get_instance_metadata() -> {ok, binary()} | {error, erlcloud_aws:httpc_result_error()}.
@@ -38,6 +38,37 @@ get_instance_metadata(ItemPath, Config) ->
 -spec get_instance_user_data() -> {ok, binary()} | {error, erlcloud_aws:httpc_result_error()}.
 get_instance_user_data() ->
    get_instance_user_data(erlcloud_aws:default_config()).
+
+%% https://aws.amazon.com/blogs/security/defense-in-depth-open-firewalls-reverse-proxies-ssrf-vulnerabilities-ec2-instance-metadata-service/
+get_instance_metadata_v2(ItemPath, Config, Opts) ->
+    case maps:find(session_token, Opts) of
+        error ->
+            case get_metadata_v2_session_token(Config) of
+                {ok, Token} ->
+                    do_get_instance_metadata_v2(ItemPath, Token, Config);
+                Error ->
+                    Error
+            end;
+        {ok, Token} ->
+            do_get_instance_metadata_v2(ItemPath, Token, Config)
+    end.
+
+
+do_get_instance_metadata_v2(ItemPath, Token, Config) ->
+    MetaDataPath = "http://" ++ ec2_meta_host_port() ++ "/latest/meta-data/" ++ ItemPath,
+    erlcloud_aws:http_body(erlcloud_httpc:request(
+       MetaDataPath, get,
+       [{"X-aws-ec2-metadata-token", Token}],
+       <<>>, erlcloud_aws:get_timeout(Config), Config)).
+
+
+get_metadata_v2_session_token(Config) ->
+    MetaDataPath = "http://" ++ ec2_meta_host_port() ++ "/latest/api/token",
+    erlcloud_aws:http_body(erlcloud_httpc:request(
+        MetaDataPath, put,
+        [{"X-aws-ec2-metadata-token-ttl-seconds", "21600"}],
+        <<>>,
+        erlcloud_aws:get_timeout(Config), Config)).
 
 %%%---------------------------------------------------------------------------
 -spec get_instance_user_data( Config :: aws_config() ) -> {ok, binary()} | {error, erlcloud_aws:httpc_result_error()}.
