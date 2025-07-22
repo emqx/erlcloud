@@ -524,7 +524,11 @@ bundle_instance(InstanceID, Bucket, Prefix, AccessKeyID, UploadPolicy,
             Error
     end.
 
+-spec extract_bundle_task(Nodes :: [xmerl_xpath_doc_nodes()]) -> proplist();
+                         (Node :: xmerl_xpath_doc_nodes()) -> proplist().
 extract_bundle_task([Node]) ->
+    extract_bundle_task(Node);
+extract_bundle_task(Node) ->
     [
      {instance_id, get_text("instanceId", Node)},
      {bundle_id, get_text("bundleId", Node)},
@@ -1508,6 +1512,7 @@ extract_instance(Node) ->
      {dns_name, get_text("dnsName", Node)},
      {reason, get_text("reason", Node, none)},
      {key_name, get_text("keyName", Node, none)},
+     {metadata_options, transform_item_list(Node, "metadataOptions", fun extract_metadata_options/1)},
      {ami_launch_index, list_to_integer(get_text("amiLaunchIndex", Node, "0"))},
      {product_codes, get_list("productCodes/item/productCode", Node)},
      {instance_type, get_text("instanceType", Node)},
@@ -2005,6 +2010,7 @@ extract_route(Node) ->
 extract_route_set(Node) ->
     [
      {destination_cidr_block, get_text("destinationCidrBlock", Node)},
+     {destination_ipv6_cidr_block, get_text("destinationIpv6CidrBlock", Node)},
      {gateway_id, get_text("gatewayId", Node)},
      {nat_gateway_id, get_text("natGatewayId", Node)},
      {instance_id, get_text("instanceId", Node)},
