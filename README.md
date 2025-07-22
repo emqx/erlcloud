@@ -1,6 +1,9 @@
 # erlcloud: AWS APIs library for Erlang
 
-[![Build Status](https://github.com/erlcloud/erlcloud/workflows/build/badge.svg)](https://github.com/erlcloud/erlcloud)
+[![Build Status](https://github.com/erlcloud/erlcloud/workflows/build/badge.svg)](https://github.com/erlcloud/erlcloud/actions/workflows/ci.yml)
+[![Hex.pm](https://img.shields.io/hexpm/v/erlcloud)](https://hex.pm/packages/erlcloud)
+[![Hex.pm](https://img.shields.io/hexpm/l/erlcloud)](COPYRIGHT)
+
 
 This library is not developed or maintained by AWS thus lots of functionality
 is still missing comparing to [aws-cli](https://aws.amazon.com/cli/) or
@@ -82,9 +85,19 @@ At the moment we support the following OTP releases:
 - 20.3
 - 21.3
 - 22.3
+- 23.3
+- 24.3
+- 25.3
+- 26.2
+- 27.1
 
-It might still work on 17+ (primarily due to Erlang maps) but we do not
-guarantee that.
+This list is determined by ensuring eunit tests and dialyzer checks succeed for these versions, but not all of these
+versions are in active use by library authors. Please report any issues discovered in actual use.
+
+The Github Actions test runners only support OTP 24+ due to runtime issues, but OTP 19-23 were tested locally with unmodified,
+official [Erlang docker images](https://hub.docker.com/_/erlang). Dialyzer checks run against the latest hex-published hackney
+for OTP 24+, but a previous versions of hackney (1.15.0) and its dependency parse_trans (3.2.0) were used to do dialyzer checks
+for OTP 19-23 due to newer versions of parse_trans requiring OTP 21+.
 
 ## Getting started
 
@@ -105,8 +118,10 @@ make
 make run
 ```
 
-If you're using erlcloud in your application, add it as a dependency in your
-application's configuration file.  To use erlcloud in the shell, you can start
+To use erlcloud in your application, add it as a dependency in your
+application's configuration file.  erlcloud is also available as a [Hex](https://hex.pm) package,  refer to the Hex [`mix` usage docs](https://hex.pm/docs/usage) or [`rebar3` usage docs](https://hex.pm/docs/rebar3-usage) for more help including dependencies using Hex syntax.
+
+To use erlcloud in the shell, you can start
 it by calling:
 
 ```erlang
@@ -284,3 +299,10 @@ as provided by OTP team.
   ddb2, ecs.
 - Library should not expose any long running or stateful processes - no
   gen_servers, no caches and etc.
+
+
+## Publishing to hex.pm
+
+erlcloud is available as a [Hex](https://hex.pm) package. A new version of the package can be published by maintainers using mix or rebar3. A `hex-publish` make target that uses rebar3 is provided for maintainers to use or reference when publishing a new version of the package.
+
+Github Actions will eventually be used to automatically publish new versions.
