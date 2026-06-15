@@ -8,7 +8,7 @@
          check_bucket_access/1, check_bucket_access/2,
          delete_bucket/1, delete_bucket/2,
          get_bucket_attribute/2, get_bucket_attribute/3,
-         list_buckets/0, list_buckets/1,
+         list_buckets/0, list_buckets/1, list_buckets/2,
          set_bucket_attribute/3, set_bucket_attribute/4,
          get_bucket_policy/1, get_bucket_policy/2,
          put_bucket_policy/2, put_bucket_policy/3,
@@ -72,6 +72,10 @@
 -include("erlcloud.hrl").
 -include("erlcloud_aws.hrl").
 -include_lib("xmerl/include/xmerl.hrl").
+
+-type list_buckets_opts() :: #{
+    max_buckets => pos_integer()
+}.
 
 %%% Note that get_bucket_and_key/1 may be used to obtain the Bucket and Key to pass to various
 %%%   functions here, from a URL such as https://s3.amazonaws.com/some_bucket/path_to_file
@@ -443,7 +447,18 @@ list_buckets() ->
 -spec list_buckets(aws_config()) -> proplist().
 
 list_buckets(Config) ->
-    Doc = s3_xml_request(Config, get, "", "/", "", [], <<>>, []),
+    list_buckets(_Opts = #{}, Config).
+
+-spec list_buckets(list_buckets_opts(), aws_config()) -> proplist().
+list_buckets(Opts, Config) ->
+    Params =
+        case Opts of
+            #{max_buckets := MaxBuckets} ->
+                [{"max-buckets", MaxBuckets}];
+            _ ->
+                []
+        end,
+    Doc = s3_xml_request(Config, get, "", "/", "", Params, <<>>, []),
     Owner = extract_user(xmerl_xpath:string("/*/Owner", Doc)),
     Buckets = [extract_bucket(Node) || Node <- xmerl_xpath:string("/*/Buckets/Bucket", Doc)],
     [{owner, Owner}, {buckets, Buckets}].
