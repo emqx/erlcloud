@@ -7,6 +7,7 @@
          aws_request4/8, aws_request4/9,
          aws_request_xml4/6, aws_request_xml4/8,
          aws_region_from_host/1,
+         aws_region_from_vpce_host/1,
          aws_request_form/8,
          aws_request_form_raw/8, aws_request_form_raw/9,
          do_aws_request_form_raw/9, do_aws_request_form_raw/10,
@@ -165,6 +166,32 @@ aws_request2_no_update(Method, Protocol, Host, Port, Path, Params, #aws_config{}
     aws_request_form(Method, Protocol, Host, Port, Path, Query, Headers, Config).
 
 aws_region_from_host(Host) ->
+    case aws_region_from_vpce_host(Host) of
+        {ok, Region} ->
+            Region;
+        error ->
+            aws_region_from_host_labels(Host)
+    end.
+
+%% Extract the region from an AWS PrivateLink interface endpoint hostname.
+%% The region is the label immediately before the "vpce" label, so the
+%% regional and zonal forms match, with or without a bucket prefix:
+%%   vpce-1a2b3c4d-5e6f.s3.us-west-2.vpce.amazonaws.com
+%%   vpce-1a2b3c4d-5e6f-us-west-2a.s3.us-west-2.vpce.amazonaws.com
+%%   bucket.vpce-1a2b3c4d-5e6f.s3.us-west-2.vpce.amazonaws.com
+%%   bucket.vpce-1a2b3c4d-5e6f-us-west-2a.s3.us-west-2.vpce.amazonaws.com
+-spec aws_region_from_vpce_host(string()) -> {ok, string()} | error.
+aws_region_from_vpce_host(Host) ->
+    vpce_region(string:tokens(Host, ".")).
+
+vpce_region([Region, "vpce", "amazonaws" | _]) ->
+    {ok, Region};
+vpce_region([_ | Rest]) ->
+    vpce_region(Rest);
+vpce_region([]) ->
+    error.
+
+aws_region_from_host_labels(Host) ->
     case string:tokens(Host, ".") of
         %% the aws endpoint can vary depending on the region
         %% we need to account for that:

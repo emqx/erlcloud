@@ -67,6 +67,7 @@
 -export([create_notification_param_xml/2]).
 -export([encode_inventory/1]).
 -export([signature/8]).
+-export([s3_region/1]).
 -endif.
 
 -include("erlcloud.hrl").
@@ -1226,7 +1227,7 @@ make_presigned_v4_url(ExpireTime, BucketName, Method, Key, QueryParams, Headers0
 -spec make_presigned_v4_url(integer(), string(), atom(), string(), proplist(), proplist(), string(), aws_config()) -> string().
 make_presigned_v4_url(ExpireTime, BucketName, Method, Key, QueryParams, Headers0, Date, Config) when is_integer(ExpireTime) ->
     {Host, Path, URL} = get_object_url_elements(BucketName, Key, Config),
-    Region = erlcloud_aws:aws_region_from_host(Config#aws_config.s3_host),
+    Region = s3_region(Config),
     Credential = erlcloud_aws:credential(Config, Date, Region, "s3"),
 
     % if a host header was passed in, use that; otherwise default to config
@@ -2130,7 +2131,7 @@ s3_request4_no_update(Config, Method, Bucket, Path, Subresource, Params, Body,
         Method, EscapedPath, Config,
         [{"host", HostName} | FHeaders ],
         Body,
-        aws_region_from_host(S3Host),
+        s3_region(Config),
         "s3", QueryParams),
 
     RequestURI = lists:flatten([
@@ -2184,9 +2185,25 @@ port_spec(#aws_config{s3_scheme = "http://", s3_port=80}) ->
 port_spec(#aws_config{s3_port=Port}) ->
     ":" ++ erlang:integer_to_list(Port).
 
+%% The signing region for both regular requests and presigned URLs.
+%% An explicit `aws_region' takes precedence over the region in `s3_host'.
+-spec s3_region(aws_config()) -> string().
+s3_region(#aws_config{aws_region = undefined, s3_host = Host}) ->
+    aws_region_from_host(Host);
+s3_region(#aws_config{aws_region = Region}) ->
+    Region.
+
 %% Extract region form s3 endpoint names.
 %% http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
 aws_region_from_host(Host) ->
+    case erlcloud_aws:aws_region_from_vpce_host(Host) of
+        {ok, Region} ->
+            Region;
+        error ->
+            aws_region_from_host_labels(Host)
+    end.
+
+aws_region_from_host_labels(Host) ->
     case string:tokens(Host, ".") of
         %% s3.cn-north-1.amazonaws.com.cn
         ["s3", Value, _, _, _] ->
